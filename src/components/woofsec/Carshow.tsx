@@ -27,7 +27,7 @@ const Carshow = () => {
           {/* CAR */}
           <CarModel
             scale={0.009}
-            position={[0, 0, -1]}
+            position={[0, -1, 0]}
             rotation={[0, angleToRadians(-40), 0]}
           />
           <Environment files="royal_esplanade_1k.hdr" />
@@ -41,8 +41,8 @@ const Carshow = () => {
             far={1}
           />
           <OrbitControls
-            minPolarAngle={Math.PI / 2}
-            maxPolarAngle={Math.PI / 2}
+            minPolarAngle={Math.PI / 3}
+            maxPolarAngle={Math.PI / 3}
             enableZoom={true}
             enablePan={false}
           />

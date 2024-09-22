@@ -12,12 +12,13 @@ Title: Toyota AE86 Sprinter Trueno Zenki
 //fixed type issue see this link --> https://github.com/pmndrs/gltfjsx/issues/101
 
 import * as THREE from "three";
-import { useGLTF } from "@react-three/drei";
+import { Decal, PivotControls, useGLTF, useTexture } from "@react-three/drei";
 import { GLTF } from "three-stdlib";
 import { useEffect, useRef, useState } from "react";
-import { useFrame } from "@react-three/fiber";
 import { carState } from "./atom";
 import { useProxy } from "valtio/utils";
+import { useControls } from "leva";
+import { positionProps, rotationProps } from "../../types";
 
 type ActionName = "actionNameOne" | "actionNameTwo" | string;
 
@@ -65,19 +66,27 @@ type GLTFResult = GLTF & {
 const CarModel = (props: JSX.IntrinsicElements["group"]) => {
   const carRef = useRef<any>(null!);
   const snap = useProxy<any>(carState);
+  const [pos, setXYZ] = useState<positionProps>([0, 0.75, 0.3]);
+  const [rot, setRot] = useState<rotationProps>([0, 0, 0]);
+  const [scl, setScl] = useState<positionProps>([0.6, 0.6, 0.6]);
+  const { debug, image } = useControls({
+    debug: false,
+    image: { image: "./utgan-mautog.jpg" },
+  });
 
   const { nodes, materials } = useGLTF(
     "/car/scene-transformed.glb"
   ) as GLTFResult;
 
   // Animate model
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime();
-    carRef.current.rotation.z = -0.2 - (1 + Math.sin(t / 1.5)) / 20;
-    carRef.current.rotation.x = Math.cos(t / 4) / 8;
-    carRef.current.rotation.y = Math.sin(t / 4) / 8;
-    carRef.current.position.y = (1 + Math.sin(t / 1.5)) / 20;
-  });
+  // useFrame((state) => {
+  //   const t = state.clock.getElapsedTime();
+  //   carRef.current.rotation.z = -0.2 - (1 + Math.sin(t / 1.5)) / 20;
+  //   carRef.current.rotation.y = Math.cos(t / 4) / 8;
+  //   carRef.current.rotation.x = Math.sin(t / 4) / 8;
+  //   carRef.current.position.y = (1 + Math.sin(t / 1.5)) / 20;
+  //   carRef.current.rotation.x += t;
+  // });
 
   // Cursor showing current color
   const [hovered, set] = useState<any>(null);
@@ -180,7 +189,34 @@ const CarModel = (props: JSX.IntrinsicElements["group"]) => {
         material={materials.PaletteMaterial003}
         rotation={[-Math.PI / 2, 0, 0]}
         scale={100}
-      />
+        // material-aoMapIntensity={1}
+        // dispose={null}
+      >
+        <group position={[0, -1.5, 1]}>
+          <PivotControls
+            scale={0.55}
+            activeAxes={[true, true, false]}
+            onDrag={(local) => {
+              const position = new THREE.Vector3();
+              const scale = new THREE.Vector3();
+              const quaternion = new THREE.Quaternion();
+              local.decompose(position, quaternion, scale);
+              const rotation = new THREE.Euler().setFromQuaternion(quaternion);
+              setXYZ([position.x, position.y + -1.5, position.z + 1]);
+              setRot([rotation.x, rotation.y, rotation.z]);
+              setScl([0.6 * scale.x, 0.6 * scale.y, 0.6 * scale.z]);
+            }}
+          />
+        </group>
+        <Decal
+          debug={debug}
+          position={pos}
+          rotation={rot}
+          scale={scl}
+          map={useTexture(image ?? "") as THREE.Texture}
+          material-depthTest={true}
+        />
+      </mesh>
       <mesh
         name="LicensePlate"
         material-color={carState.items.LicensePlate}
